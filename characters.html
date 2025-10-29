@@ -1,35 +1,204 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Characters</title>
-  <link rel="stylesheet" href="styles.css?v=1">
+  <link rel="stylesheet" href="styles.css?v=1" />
   <script defer src="script.js?v=1"></script>
+  <style>
+    /* --- page-local preview styles (safe to keep) --- */
+    .center { text-align:center }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0 16px }
+    .toolbar .grow { flex:1 }
+    .pill { appearance:none; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text);
+            border-radius:999px; padding:6px 10px; font-size:13px }
+    .pill.active { background:rgba(22,32,26,.85) }
+    .big { padding:12px 16px; border-radius:14px; font-weight:700 }
+    .primary { background:linear-gradient(180deg,#9AB39A,var(--sage)); color:#132018; border:1px solid var(--sage-700) }
+    .ghost { background:transparent; border:1px solid #2a3a31; color:var(--text) }
+    .tabs { display:flex; gap:8px; justify-content:center; margin:8px 0 12px }
+    .tab { appearance:none; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text);
+           padding:10px 14px; border-radius:12px; font-weight:700 }
+    .tab.active { background:rgba(22,32,26,.88) }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px }
+    .card {
+      position:relative; border-radius:18px; overflow:hidden; padding:14px;
+      background:linear-gradient(180deg,#1b2822 0%, #16201a 100%);
+      border:1px solid #2a3a31; box-shadow:0 12px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .card .top { display:flex; gap:12px; align-items:center; margin-bottom:8px }
+    .avatar { width:56px; height:56px; border-radius:14px; object-fit:cover; background:#0f1412; border:1px solid #2a3a31 }
+    .name { font-weight:800 }
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
+    .tag { font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(22,32,26,.6); border:1px solid #2a3a31 }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px }
+    .mini { padding:8px 10px; border-radius:10px; font-size:13px }
+    .section { margin-top:16px }
+    details { border:1px solid #2a3a31; background:rgba(22,32,26,.6); border-radius:14px; padding:10px 12px }
+    details+details { margin-top:10px }
+    summary { cursor:pointer; font-weight:800; outline:none }
+    .row { display:flex; gap:10px; align-items:center }
+    label { font-size:13px; opacity:.9 }
+    input[type="text"], input[type="url"], textarea, select {
+      width:100%; padding:10px; border-radius:12px; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text)
+    }
+    textarea { min-height:110px }
+    .sl { display:flex; gap:12px; align-items:center }
+    input[type="range"] { width:100% }
+    .sticky-save { position:sticky; bottom:0; display:flex; gap:10px; background:linear-gradient(180deg,transparent,rgba(15,20,18,.9));
+                   padding-top:10px }
+    .note { color:var(--muted); font-size:12px }
+  </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
+    <!-- centered header -->
+    <header class="center">
       <div class="brand">Characters</div>
+      <p class="sub">Build realistic presets with pics, traits, sliders, and notes—saved locally on this device.</p>
     </header>
-    <nav class="topnav">
-      <a href="index.html">Home</a>
-      <a href="characters.html">Characters</a>
-      <a href="lorebook.html">Lorebook</a>
-      <a href="story-writer.html">Story Writer</a>
-      <a href="profile.html">Profile</a>
-      <a href="settings.html">Settings</a>
-    </nav>
-    
-  <div class="section">
-    <h2>Characters</h2>
-    <p>Make cards for your characters here. (You can start with names, tags, and an image link.)</p>
-    <ul>
-      <li>Idea: add a simple list now; upgrade later with JS forms and localStorage.</li>
-      <li>Adults 21+ only, fully consensual scenarios (baked-in rule).</li>
-    </ul>
+
+    <!-- small top controls -->
+    <div class="toolbar">
+      <select id="profileSel" class="pill">
+        <option>Profile: Maddie</option>
+        <option>Profile: Friend 1</option>
+      </select>
+      <input id="search" class="grow" type="text" placeholder="Search by name, tags, or text…">
+      <button class="pill">Cards</button>
+      <button class="pill">List</button>
+      <button class="pill active">Sparkles Off</button>
+      <button class="pill ghost" id="btn-import">Import JSON</button>
+      <button class="pill ghost" id="btn-export">Export JSON</button>
+      <button class="big primary" id="btn-add">+ Add Character</button>
+    </div>
+
+    <!-- tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="roster">Roster</button>
+      <button class="tab" data-tab="editor">New · Edit</button>
+    </div>
+
+    <!-- ROSTER -->
+    <section id="tab-roster" class="page active">
+      <div class="row" style="margin-bottom:10px">
+        <button class="pill active">All</button>
+        <button class="pill">Hunter</button>
+        <button class="pill">Canon</button>
+        <button class="pill">OC</button>
+        <span class="grow"></span>
+        <span class="note">Tip: Tap a card’s “Edit” to load it into the form.</span>
+      </div>
+
+      <div class="cards">
+        <!-- example cards just for preview -->
+        <article class="card">
+          <div class="top">
+            <img class="avatar" src="https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=200&auto=format&fit=crop" alt="">
+            <div>
+              <div class="name">Dean Winchester</div>
+              <div class="tags">
+                <span class="tag">hunter</span><span class="tag">canon</span><span class="tag">protective</span>
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini primary">Use in Chat</button>
+            <button class="mini primary">Use in Writer</button>
+            <button class="mini ghost">Edit</button>
+            <button class="mini ghost">Duplicate</button>
+            <button class="mini ghost">Favorite</button>
+            <button class="mini ghost">Delete</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="top">
+            <img class="avatar" src="https://images.unsplash.com/photo-1541532713592-79a0317b6b77?q=80&w=200&auto=format&fit=crop" alt="">
+            <div>
+              <div class="name">Your OC</div>
+              <div class="tags">
+                <span class="tag">oc</span><span class="tag">slow-burn</span><span class="tag">snarky</span>
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini primary">Use in Chat</button>
+            <button class="mini primary">Use in Writer</button>
+            <button class="mini ghost">Edit</button>
+            <button class="mini ghost">Duplicate</button>
+            <button class="mini ghost">Favorite</button>
+            <button class="mini ghost">Delete</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- EDITOR -->
+    <section id="tab-editor" class="page" style="display:none">
+      <div class="row" style="margin-bottom:10px">
+        <button class="pill" id="tpl-dean">+ Dean template</button>
+        <button class="pill">+ Add template…</button>
+        <span class="grow"></span>
+        <span class="note">Sliders: 0 = less, 10 = more</span>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <div class="grow"><label>Name</label><input type="text" placeholder="Character name"></div>
+        <div class="grow"><label>Tags (comma-separated)</label><input type="text" placeholder="e.g., hunter, canon, protective"></div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <div class="grow"><label>Avatar URL</label><input type="url" placeholder="https://…"></div>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <button class="pill ghost">Upload Image (local)</button>
+        <button class="pill ghost">Crop / Fit</button>
+      </div>
+
+      <details open><summary>Appearance</summary><textarea placeholder="Physical description, style, mannerisms…"></textarea></details>
+      <details open><summary>Personality</summary><textarea placeholder="Core traits, values, motivations, flaws…"></textarea></details>
+      <details open><summary>Voice</summary><textarea placeholder="How they speak: cadence, slang, sarcasm level…"></textarea></details>
+      <details><summary>Boundaries & Morals</summary><textarea placeholder="Hard no's, soft limits, lines they won’t cross… (built-in 21+ consent enforced)"></textarea></details>
+      <details><summary>Special Tones / Rules</summary><textarea placeholder="Narrative rules, POV quirks, do/don’t list…"></textarea></details>
+      <details><summary>Relationship Mode</summary><textarea placeholder="Best friends-to-lovers, in-relationship dynamics, towards-women behavior…"></textarea></details>
+      <details><summary>Sample Prompts / Notes</summary><textarea placeholder="Starter prompts, hooks, scene seeds…"></textarea></details>
+      <details><summary>Extras</summary><textarea placeholder="Any other descriptive bits for realism (habits, micro-tells, injuries, etc.)…"></textarea></details>
+
+      <div class="row section">
+        <div class="grow sl">
+          <label>Spice 0–10</label>
+          <input type="range" min="0" max="10" value="5">
+        </div>
+        <div class="grow sl">
+          <label>Realism 0–10</label>
+          <input type="range" min="0" max="10" value="7">
+        </div>
+      </div>
+
+      <div class="sticky-save">
+        <button class="big primary">Save Character</button>
+        <button class="big ghost">Undo</button>
+        <span class="grow"></span>
+        <button class="pill ghost">Duplicate</button>
+        <button class="pill ghost">Delete</button>
+      </div>
+    </section>
   </div>
 
-  </div>
+  <script>
+    // tiny tab toggle for preview
+    const tabs = document.querySelectorAll('.tab');
+    const pages = { roster: document.getElementById('tab-roster'), editor: document.getElementById('tab-editor') };
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const key = t.dataset.tab;
+      pages.roster.style.display = key === 'roster' ? 'block' : 'none';
+      pages.editor.style.display = key === 'editor' ? 'block' : 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+  </script>
 </body>
 </html>
