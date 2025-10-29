@@ -1,320 +1,242 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Characters</title>
-  <link rel="stylesheet" href="styles.css?v=1" />
-  <style>
-    /* --- page-local preview styles (safe to keep) --- */
-    .center { text-align:center }
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0 16px }
-    .toolbar .grow { flex:1 }
-    .pill { appearance:none; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text);
-            border-radius:999px; padding:6px 10px; font-size:13px }
-    .pill.active { background:rgba(22,32,26,.85) }
-    .big { padding:12px 16px; border-radius:14px; font-weight:700 }
-    .primary { background:linear-gradient(180deg,#9AB39A,var(--sage)); color:#132018; border:1px solid var(--sage-700) }
-    .ghost { background:transparent; border:1px solid #2a3a31; color:var(--text) }
-    .tabs { display:flex; gap:8px; justify-content:center; margin:8px 0 12px }
-    .tab { appearance:none; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text);
-           padding:10px 14px; border-radius:12px; font-weight:700 }
-    .tab.active { background:rgba(22,32,26,.88) }
-    .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px }
-    .card {
-      position:relative; border-radius:18px; overflow:hidden; padding:14px;
-      background:linear-gradient(180deg,#1b2822 0%, #16201a 100%);
-      border:1px solid #2a3a31; box-shadow:0 12px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
-    }
-    .card .top { display:flex; gap:12px; align-items:center; margin-bottom:8px }
-    .avatar { width:56px; height:56px; border-radius:14px; object-fit:cover; background:#0f1412; border:1px solid #2a3a31 }
-    .name { font-weight:800 }
-    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
-    .tag { font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(22,32,26,.6); border:1px solid #2a3a31 }
-    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px }
-    .mini { padding:8px 10px; border-radius:10px; font-size:13px }
-    .section { margin-top:16px }
-    details { border:1px solid #2a3a31; background:rgba(22,32,26,.6); border-radius:14px; padding:10px 12px }
-    details+details { margin-top:10px }
-    summary { cursor:pointer; font-weight:800; outline:none }
-    .row { display:flex; gap:10px; align-items:center }
-    label { font-size:13px; opacity:.9 }
-    input[type="text"], input[type="url"], textarea, select {
-      width:100%; padding:10px; border-radius:12px; border:1px solid #2a3a31; background:rgba(22,32,26,.55); color:var(--text)
-    }
-    textarea { min-height:110px }
-    .sl { display:flex; gap:12px; align-items:center }
-    input[type="range"] { width:100% }
-    .sticky-save { position:sticky; bottom:0; display:flex; gap:10px; background:linear-gradient(180deg,transparent,rgba(15,20,18,.9));
-                   padding-top:10px }
-    .note { color:var(--muted); font-size:12px }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Characters</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+/* Minimal styles so you can see states even if styles.css fails */
+body{background:#0f1412;color:#e9eee9;font:16px system-ui;margin:0}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+h1{margin:8px 0 6px 0}
+.sub{opacity:.8;margin:0 0 12px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.pill{appearance:none;border:1px solid #2a3a31;background:#12201a;color:#e9eee9;border-radius:999px;padding:8px 12px}
+.pill.active,.pill.primary{background:#2f6f4f;border-color:#2f6f4f}
+.ghost{background:transparent}
+input[type="text"]{background:#0f1412;border:1px solid #2a3a31;color:#e9eee9;border-radius:12px;padding:10px;min-width:220px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.card{border:1px solid #2a3a31;background:#0f1915;border-radius:16px;padding:12px}
+.card .top{display:flex;gap:12px}
+.avatar{width:56px;height:56px;border-radius:12px;object-fit:cover;background:#0f1412;border:1px solid #2a3a31}
+.name{font-weight:700}
+.tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:4px 8px;background:#132018;border:1px solid #2a3a31;border-radius:999px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.section{border:1px dashed #2a3a31;border-radius:12px;padding:12px;margin:12px 0}
+.sticky-save{position:sticky;bottom:0;background:#0f1412;padding:8px;display:flex;gap:8px}
+.is-fav{box-shadow:0 0 0 2px #d4af37 inset}
+.sparkles-off .card{box-shadow:none}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- centered header -->
-    <header class="center">
-      <div class="brand">Characters</div>
-      <p class="sub">Build realistic presets with pics, traits, sliders, and notes—saved locally on this device.</p>
-    </header>
+<div class="wrap">
+  <h1>Characters</h1>
+  <p class="sub">Build realistic presets with pics, traits, sliders & notes. Saved locally.</p>
 
-    <!-- small top controls -->
-    <div class="toolbar">
-      <select id="profileSel" class="pill">
-        <option>Profile: Maddie</option>
-        <option>Profile: Friend 1</option>
-      </select>
-      <input id="search" class="grow" type="text" placeholder="Search by name, tags, or text…">
-      <button class="pill">Cards</button>
-      <button class="pill">List</button>
-      <button class="pill active">Sparkles Off</button>
-      <button class="pill ghost" id="btn-import">Import JSON</button>
-      <button class="pill ghost" id="btn-export">Export JSON</button>
-      <button class="big primary" id="btn-add">+ Add Character</button>
-    </div>
+  <!-- top controls -->
+  <div class="row">
+    <input id="search" type="text" placeholder="Search characters…" />
+    <button class="pill" id="btn-cards">Cards</button>
+    <button class="pill" id="btn-list">List</button>
+    <button class="pill" id="btn-spark">Sparkles Off</button>
+    <button class="pill" id="btn-export">Export JSON</button>
+    <button class="pill" id="btn-import">Import JSON</button>
+    <button class="pill primary" id="btn-add">+ Add Character</button>
+  </div>
 
-    <!-- tabs -->
-    <div class="tabs">
-      <button class="tab active" data-tab="roster">Roster</button>
-      <button class="tab" data-tab="editor">New · Edit</button>
-    </div>
+  <div class="row">
+    <button class="pill active">All</button>
+    <button class="pill">Hunter</button>
+    <button class="pill">Canon</button>
+    <button class="pill">OC</button>
+  </div>
 
-    <!-- ROSTER -->
-    <section id="tab-roster" class="page active">
-      <div class="row" style="margin-bottom:10px">
-        <button class="pill active">All</button>
-        <button class="pill">Hunter</button>
-        <button class="pill">Canon</button>
-        <button class="pill">OC</button>
-        <span class="grow"></span>
-        <span class="note">Tip: Tap a card’s “Edit” to load it into the form.</span>
-      </div>
+  <!-- tabs -->
+  <div class="row">
+    <button class="pill tab active" data-tab="roster">Roster</button>
+    <button class="pill tab" data-tab="editor">New · Edit</button>
+  </div>
 
-      <div class="cards">
-        <!-- example cards just for preview -->
-        <article class="card">
-          <div class="top">
-            <img class="avatar" src="https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=200&auto=format&fit=crop" alt="">
-            <div>
-              <div class="name">Dean Winchester</div>
-              <div class="tags">
-                <span class="tag">hunter</span><span class="tag">canon</span><span class="tag">protective</span>
-              </div>
+  <!-- roster -->
+  <section id="tab-roster">
+    <div class="cards">
+      <article class="card">
+        <div class="top">
+          <img class="avatar" src="" alt="">
+          <div>
+            <div class="name">Dean Winchester</div>
+            <div class="tags">
+              <span class="tag">hunter</span>
+              <span class="tag">canon</span>
+              <span class="tag">protective</span>
             </div>
           </div>
-          <div class="actions">
-            <button class="mini primary">Use in Chat</button>
-            <button class="mini primary">Use in Writer</button>
-            <button class="mini ghost">Edit</button>
-            <button class="mini ghost">Duplicate</button>
-            <button class="mini ghost">Favorite</button>
-            <button class="mini ghost">Delete</button>
-          </div>
-        </article>
+        </div>
+        <div class="actions">
+          <button class="pill primary">Use in Chat</button>
+          <button class="pill primary">Use in Writer</button>
+          <button class="pill ghost">Edit</button>
+          <button class="pill ghost">Duplicate</button>
+          <button class="pill ghost">Favorite</button>
+          <button class="pill ghost">Delete</button>
+        </div>
+      </article>
 
-        <article class="card">
-          <div class="top">
-            <img class="avatar" src="https://images.unsplash.com/photo-1541532713592-79a0317b6b77?q=80&w=200&auto=format&fit=crop" alt="">
-            <div>
-              <div class="name">Your OC</div>
-              <div class="tags">
-                <span class="tag">oc</span><span class="tag">slow-burn</span><span class="tag">snarky</span>
-              </div>
+      <article class="card">
+        <div class="top">
+          <img class="avatar" src="" alt="">
+          <div>
+            <div class="name">Your OC</div>
+            <div class="tags">
+              <span class="tag">oc</span>
+              <span class="tag">slow-burn</span>
+              <span class="tag">snarky</span>
             </div>
           </div>
-          <div class="actions">
-            <button class="mini primary">Use in Chat</button>
-            <button class="mini primary">Use in Writer</button>
-            <button class="mini ghost">Edit</button>
-            <button class="mini ghost">Duplicate</button>
-            <button class="mini ghost">Favorite</button>
-            <button class="mini ghost">Delete</button>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- EDITOR -->
-    <section id="tab-editor" class="page" style="display:none">
-      <div class="row" style="margin-bottom:10px">
-        <button class="pill" id="tpl-dean">+ Dean template</button>
-        <button class="pill">+ Add template…</button>
-        <span class="grow"></span>
-        <span class="note">Sliders: 0 = less, 10 = more</span>
-      </div>
-
-      <div class="row" style="margin-bottom:10px">
-        <div class="grow"><label>Name</label><input type="text" placeholder="Character name"></div>
-        <div class="grow"><label>Tags (comma-separated)</label><input type="text" placeholder="e.g., hunter, canon, protective"></div>
-      </div>
-
-      <div class="row" style="margin-bottom:10px">
-        <div class="grow"><label>Avatar URL</label><input type="url" placeholder="https://…"></div>
-      </div>
-      <div class="row" style="margin-bottom:10px">
-        <button class="pill ghost">Upload Image (local)</button>
-        <button class="pill ghost">Crop / Fit</button>
-      </div>
-
-      <details open><summary>Appearance</summary><textarea placeholder="Physical description, style, mannerisms…"></textarea></details>
-      <details open><summary>Personality</summary><textarea placeholder="Core traits, values, motivations, flaws…"></textarea></details>
-      <details open><summary>Voice</summary><textarea placeholder="How they speak: cadence, slang, sarcasm level…"></textarea></details>
-      <details><summary>Boundaries & Morals</summary><textarea placeholder="Hard no's, soft limits, lines they won’t cross… (built-in 21+ consent enforced)"></textarea></details>
-      <details><summary>Special Tones / Rules</summary><textarea placeholder="Narrative rules, POV quirks, do/don’t list…"></textarea></details>
-      <details><summary>Relationship Mode</summary><textarea placeholder="Best friends-to-lovers, in-relationship dynamics, towards-women behavior…"></textarea></details>
-      <details><summary>Sample Prompts / Notes</summary><textarea placeholder="Starter prompts, hooks, scene seeds…"></textarea></details>
-      <details><summary>Extras</summary><textarea placeholder="Any other descriptive bits for realism (habits, micro-tells, injuries, etc.)…"></textarea></details>
-
-      <div class="row section">
-        <div class="grow sl">
-          <label>Spice 0–10</label>
-          <input type="range" min="0" max="10" value="5">
         </div>
-        <div class="grow sl">
-          <label>Realism 0–10</label>
-          <input type="range" min="0" max="10" value="7">
+        <div class="actions">
+          <button class="pill primary">Use in Chat</button>
+          <button class="pill primary">Use in Writer</button>
+          <button class="pill ghost">Edit</button>
+          <button class="pill ghost">Duplicate</button>
+          <button class="pill ghost">Favorite</button>
+          <button class="pill ghost">Delete</button>
         </div>
-      </div>
+      </article>
+    </div>
+  </section>
 
-      <div class="sticky-save">
-        <button class="big primary">Save Character</button>
-        <button class="big ghost">Undo</button>
-        <span class="grow"></span>
-        <button class="pill ghost">Duplicate</button>
-        <button class="pill ghost">Delete</button>
+  <!-- editor -->
+  <section id="tab-editor" style="display:none">
+    <div class="section">
+      <div class="row">
+        <button class="pill ghost" id="btn-upload">Upload Picture</button>
+        <button class="pill ghost" id="btn-clearpic">Clear Picture</button>
       </div>
-    </section>
+      <div id="pic-preview" style="display:none">
+        <img id="pic-img" class="avatar" alt="Preview">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="row"><input id="fld-name" type="text" placeholder="Name" class="grow"></div>
+      <div class="row"><input id="fld-tags" type="text" placeholder="Tags (comma separated)" class="grow"></div>
+      <div class="row"><input id="fld-appearance" type="text" placeholder="Appearance notes" class="grow"></div>
+      <div class="row"><input id="fld-personality" type="text" placeholder="Personality" class="grow"></div>
+      <div class="row"><input id="fld-voice" type="text" placeholder="Voice / manner" class="grow"></div>
+      <div class="row"><input id="fld-bounds" type="text" placeholder="Boundaries & morals" class="grow"></div>
+      <div class="row"><input id="fld-tones" type="text" placeholder="Special tones / rules" class="grow"></div>
+      <div class="row"><input id="fld-rel" type="text" placeholder="Relationship mode" class="grow"></div>
+      <div class="row"><input id="fld-notes" type="text" placeholder="Sample prompts / notes" class="grow"></div>
+    </div>
+
+    <div class="sticky-save">
+      <button class="pill primary" id="btn-save">Save Character</button>
+      <button class="pill ghost" id="btn-undo">Undo</button>
+    </div>
+  </section>
+</div>
+
+<!-- Inline wiring so nothing can fail to load -->
 <script>
-/* Characters page wiring — inline v3 */
 (() => {
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$=(s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  // Add a small "Loaded" chip so you can SEE it's active
-  const chip = document.createElement('div');
-  chip.textContent = 'Loaded ✓ v3';
-  chip.style.cssText = 'position:fixed;right:10px;bottom:10px;background:#2f6f4f;color:#e5ffef;padding:6px 10px;border-radius:999px;font:12px/1.2 system-ui;z-index:9999';
+  // visible "loaded" chip
+  const chip=document.createElement('div');
+  chip.textContent='Loaded ✓ characters v4';
+  chip.style.cssText='position:fixed;bottom:10px;right:10px;background:#2f6f4f;color:#eaffec;padding:6px 10px;border-radius:999px;font:12px system-ui;z-index:9999';
   document.body.appendChild(chip);
 
-  // Tabs
-  const tabRosterBtn = document.querySelector('.tab[data-tab="roster"]');
-  const tabEditorBtn = document.querySelector('.tab[data-tab="editor"]');
-  const tabRoster = document.getElementById('tab-roster');
-  const tabEditor = document.getElementById('tab-editor');
-  function goTab(key){
-    if(!tabRoster || !tabEditor) return;
-    [tabRosterBtn, tabEditorBtn].forEach(b=>b&&b.classList.remove('active'));
-    if(key==='roster'){
-      tabRoster.style.display='block';
-      tabEditor.style.display='none';
-      tabRosterBtn && tabRosterBtn.classList.add('active');
-    } else {
-      tabRoster.style.display='none';
-      tabEditor.style.display='block';
-      tabEditorBtn && tabEditorBtn.classList.add('active');
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
+  // tabs
+  const rosterBtn=$('.tab[data-tab="roster"]');
+  const editorBtn=$('.tab[data-tab="editor"]');
+  const roster=$('#tab-roster');
+  const editor=$('#tab-editor');
+  function goTab(k){
+    [rosterBtn,editorBtn].forEach(b=>b&&b.classList.remove('active'));
+    if(k==='editor'){ roster.style.display='none'; editor.style.display='block'; editorBtn.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+    else { editor.style.display='none'; roster.style.display='block'; rosterBtn.classList.add('active'); }
   }
-  tabRosterBtn && tabRosterBtn.addEventListener('click',()=>goTab('roster'));
-  tabEditorBtn && tabEditorBtn.addEventListener('click',()=>goTab('editor'));
+  rosterBtn?.addEventListener('click',()=>goTab('roster'));
+  editorBtn?.addEventListener('click',()=>goTab('editor'));
 
-  // Add Character → Editor
-  const addBtn = document.getElementById('btn-add');
-  addBtn && addBtn.addEventListener('click',()=>goTab('editor'));
-
-  // Sparkles toggle (adds/removes a class on <body>)
-  const sparkBtn = $$('.pill').find(b=>b.textContent.trim().toLowerCase().startsWith('sparkles'));
-  sparkBtn && sparkBtn.addEventListener('click',()=>{
+  // sparkles toggle
+  $('#btn-spark')?.addEventListener('click',e=>{
     document.body.classList.toggle('sparkles-off');
-    sparkBtn.textContent = document.body.classList.contains('sparkles-off') ? 'Sparkles On' : 'Sparkles Off';
+    e.target.textContent=document.body.classList.contains('sparkles-off')?'Sparkles On':'Sparkles Off';
   });
 
-  // Search filter (live)
-  const search = document.getElementById('search');
-  const cardsWrap = document.querySelector('.cards');
+  // search
+  const search=$('#search'); const cards=$('.cards');
   function applySearch(){
-    if(!cardsWrap) return;
-    const q=(search?.value||'').toLowerCase().trim();
-    $$('.card',cardsWrap).forEach(card=>{
-      const txt = card.textContent.toLowerCase();
-      card.style.display = !q || txt.includes(q) ? '' : 'none';
+    const q=(search?.value||'').toLowerCase();
+    $$('.card',cards).forEach(c=>{
+      c.style.display = !q || c.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   }
-  search && search.addEventListener('input', applySearch);
+  search?.addEventListener('input',applySearch);
 
-  // Tag pill row (All/Hunter/Canon/OC demo)
-  const tagRow = tabRoster?.querySelector('.row');
-  tagRow && tagRow.addEventListener('click', e=>{
-    const b = e.target.closest('.pill');
-    if(!b) return;
-    const t = b.textContent.trim().toLowerCase();
-    $$('.pill', tagRow).forEach(x=>x.classList.remove('active'));
+  // tag filter row (All/Hunter/Canon/OC)
+  const tagRow = $$('.row')[1];
+  tagRow?.addEventListener('click',e=>{
+    const b=e.target.closest('.pill'); if(!b) return;
+    $$('.pill',tagRow).forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
-    if(!cardsWrap) return;
-    $$('.card', cardsWrap).forEach(card=>{
+    const t=b.textContent.trim().toLowerCase();
+    $$('.card',cards).forEach(card=>{
       if(t==='all'){ card.style.display=''; return; }
-      const hit = $$('.tag', card).some(x=>x.textContent.trim().toLowerCase()===t);
+      const hit=$$('.tag',card).some(x=>x.textContent.trim().toLowerCase()===t);
       card.style.display = hit ? '' : 'none';
     });
   });
 
-  // Roster card actions (event delegation)
-  cardsWrap && cardsWrap.addEventListener('click', e=>{
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    const card = e.target.closest('.card');
-    if(!card) return;
-    const name = (card.querySelector('.name')?.textContent||'Character').trim().replace(/\s+/g,' ');
+  // roster actions
+  cards?.addEventListener('click',e=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const card=e.target.closest('.card'); const name=card?.querySelector('.name')?.textContent?.trim()||'Character';
+    const label=btn.textContent.trim().toLowerCase();
 
-    const label = btn.textContent.trim().toLowerCase();
     if(label.startsWith('use in writer')){
-      window.location.href = `story-writer.html?char=${encodeURIComponent(name)}`;
+      location.href=`story-writer.html?char=${encodeURIComponent(name)}`;
     } else if(label.startsWith('use in chat')){
-      window.location.href = `story-writer.html#chat?char=${encodeURIComponent(name)}`;
+      location.href=`story-writer.html#chat?char=${encodeURIComponent(name)}`;
     } else if(label==='edit'){
       goTab('editor');
-      // (Later: load card data into the form)
     } else if(label==='duplicate'){
-      const clone = card.cloneNode(true);
-      cardsWrap.appendChild(clone);
+      const clone=card.cloneNode(true); cards.appendChild(clone);
     } else if(label==='favorite'){
-      card.classList.toggle('is-fav');
-      btn.classList.toggle('primary');
+      card.classList.toggle('is-fav'); btn.classList.toggle('primary');
     } else if(label==='delete'){
       card.remove();
     }
   });
 
-  // Export visible cards (simple JSON demo)
-  const btnExport = document.getElementById('btn-export');
-  btnExport && btnExport.addEventListener('click',()=>{
-    if(!cardsWrap) return;
-    const cards = $$('.card', cardsWrap).filter(c=>c.style.display!=='none').map(c=>({
-      name: c.querySelector('.name')?.textContent.trim()||'',
-      tags: $$('.tag',c).map(t=>t.textContent.trim()),
-      avatar: c.querySelector('.avatar')?.getAttribute('src')||''
+  // add character -> editor
+  $('#btn-add')?.addEventListener('click',()=>goTab('editor'));
+
+  // export
+  $('#btn-export')?.addEventListener('click',()=>{
+    const payload=$$('.card',cards).map(c=>({
+      name:c.querySelector('.name')?.textContent?.trim()||'',
+      tags:$$('.tag',c).map(t=>t.textContent.trim()),
+      avatar:c.querySelector('.avatar')?.getAttribute('src')||''
     }));
-    const data = {version:1, exportedAt:new Date().toISOString(), cards};
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'characters.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const blob=new Blob([JSON.stringify({cards:payload},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='characters.json'; a.click(); URL.revokeObjectURL(a.href);
   });
 
-  // Import JSON (adds quick cards to roster)
-  const btnImport = document.getElementById('btn-import');
-  btnImport && btnImport.addEventListener('click',()=>{
-    const input = document.createElement('input');
-    input.type='file'; input.accept='application/json';
-    input.onchange=async ()=>{
-      const file = input.files?.[0]; if(!file) return;
-      let data; try{ data=JSON.parse(await file.text()); }catch{ alert('Invalid JSON'); return; }
-      if(!Array.isArray(data.cards)){ alert('JSON missing "cards"'); return; }
+  // import
+  $('#btn-import')?.addEventListener('click',()=>{
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+    inp.onchange=async()=>{ const f=inp.files?.[0]; if(!f) return;
+      let data; try{data=JSON.parse(await f.text())}catch{return alert('Bad JSON')}
+      if(!Array.isArray(data.cards)) return alert('JSON missing "cards"');
       data.cards.forEach(c=>{
-        const el=document.createElement('article');
-        el.className='card';
+        const el=document.createElement('article'); el.className='card';
         el.innerHTML=`
           <div class="top">
             <img class="avatar" src="${(c.avatar||'').replace(/"/g,'&quot;')}" alt="">
@@ -324,57 +246,35 @@
             </div>
           </div>
           <div class="actions">
-            <button class="mini primary">Use in Chat</button>
-            <button class="mini primary">Use in Writer</button>
-            <button class="mini ghost">Edit</button>
-            <button class="mini ghost">Duplicate</button>
-            <button class="mini ghost">Favorite</button>
-            <button class="mini ghost">Delete</button>
+            <button class="pill primary">Use in Chat</button>
+            <button class="pill primary">Use in Writer</button>
+            <button class="pill ghost">Edit</button>
+            <button class="pill ghost">Duplicate</button>
+            <button class="pill ghost">Favorite</button>
+            <button class="pill ghost">Delete</button>
           </div>`;
-        cardsWrap.appendChild(el);
+        cards.appendChild(el);
       });
       goTab('roster');
     };
-    input.click();
+    inp.click();
   });
 
-  // === Editor mini-wiring ===
-  // Upload image → show a preview box right below the Upload button
-  const uploadBtn = $('#tab-editor .pill.ghost:nth-of-type(1)');
-  if(uploadBtn){
-    const preview = document.createElement('img');
-    preview.alt='Avatar preview';
-    preview.style.cssText='display:none;width:96px;height:96px;border-radius:18px;border:1px solid #2a3a31;margin:8px 0;object-fit:cover;background:#0f1412';
-    uploadBtn.parentElement.insertAdjacentElement('afterend', preview);
+  // editor: upload preview
+  const up=$('#btn-upload'), clr=$('#btn-clearpic'), prevBox=$('#pic-preview'), prevImg=$('#pic-img');
+  up?.addEventListener('click',()=>{
+    const i=document.createElement('input'); i.type='file'; i.accept='image/*';
+    i.onchange=()=>{ const f=i.files?.[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{ prevImg.src=r.result; prevBox.style.display='block'; }; r.readAsDataURL(f);
+    };
+    i.click();
+  });
+  clr?.addEventListener('click',()=>{ prevImg.src=''; prevBox.style.display='none'; });
 
-    uploadBtn.addEventListener('click', ()=>{
-      const input=document.createElement('input');
-      input.type='file'; input.accept='image/*';
-      input.onchange=()=>{
-        const f=input.files?.[0]; if(!f) return;
-        const reader=new FileReader();
-        reader.onload=()=>{ preview.src=reader.result; preview.style.display='block'; };
-        reader.readAsDataURL(f);
-      };
-      input.click();
-    });
-  }
-
-  // Save / Undo buttons (demo to prove they’re wired)
-  const sticky = document.querySelector('.sticky-save');
-  if(sticky){
-    sticky.addEventListener('click', e=>{
-      const b=e.target.closest('button'); if(!b) return;
-      const label=b.textContent.trim().toLowerCase();
-      if(label==='save character'){ alert('Saved! (Demo) Next step: persist to localStorage with profiles.)'; }
-      else if(label==='undo'){ alert('Undone (Demo).'); }
-    });
-  }
-
-  // Initial filter once
-  applySearch();
+  // save/undo demos so buttons aren’t dead
+  $('#btn-save')?.addEventListener('click',()=>alert('Saved (demo). Next: persist to localStorage.'));
+  $('#btn-undo')?.addEventListener('click',()=>alert('Undone (demo).'));
 })();
 </script>
-  </div>
 </body>
 </html>
