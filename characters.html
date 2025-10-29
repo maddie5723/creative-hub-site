@@ -142,12 +142,278 @@ input[type="text"]{background:#0f1412;border:1px solid #2a3a31;color:#e9eee9;bor
 <!-- Inline wiring so nothing can fail to load -->
 <script>
 (() => {
-  const $ = (s, r=document)=>r.querySelector(s);
-  const $$=(s, r=document)=>Array.from(r.querySelectorAll(s));
+  // ---------- tiny helpers ----------
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const uid = ()=>'c_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
 
-  // visible "loaded" chip
+  // version chip so we know the new code loaded
   const chip=document.createElement('div');
-  chip.textContent='Loaded ✓ characters v4';
+  chip.textContent='Loaded ✓ characters v5';
+  chip.style.cssText='position:fixed;bottom:10px;right:10px;background:#2f6f4f;color:#eaffec;padding:6px 10px;border-radius:999px;font:12px system-ui;z-index:9999';
+  document.body.appendChild(chip);
+
+  // ---------- storage ----------
+  const STORE_KEY = 'creative.characters.v1';
+  const SEL_KEY   = 'creative.selectedCharId';
+
+  function loadAll(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) return [];
+      return arr;
+    } catch { return []; }
+  }
+  function saveAll(arr){
+    localStorage.setItem(STORE_KEY, JSON.stringify(arr));
+  }
+  function getById(id){ return loadAll().find(x=>x.id===id); }
+  function upsert(item){
+    const list = loadAll();
+    const idx = list.findIndex(x=>x.id===item.id);
+    if (idx>=0) list[idx]=item; else list.push(item);
+    saveAll(list);
+  }
+  function remove(id){
+    const list = loadAll().filter(x=>x.id!==id);
+    saveAll(list);
+  }
+
+  // ---------- DOM refs ----------
+  const rosterBtn = $('.tab[data-tab="roster"]');
+  const editorBtn = $('.tab[data-tab="editor"]');
+  const roster    = $('#tab-roster');
+  const editor    = $('#tab-editor');
+  const cardsWrap = $('.cards', roster);
+  const search    = $('#search');
+
+  // Editor fields
+  const fld = {
+    name:        $('#fld-name'),
+    tags:        $('#fld-tags'),
+    appearance:  $('#fld-appearance'),
+    personality: $('#fld-personality'),
+    voice:       $('#fld-voice'),
+    bounds:      $('#fld-bounds'),
+    tones:       $('#fld-tones'),
+    rel:         $('#fld-rel'),
+    notes:       $('#fld-notes'),
+  };
+  const upBtn  = $('#btn-upload');
+  const clrBtn = $('#btn-clearpic');
+  const prevBox= $('#pic-preview');
+  const prevImg= $('#pic-img');
+  const saveBtn= $('#btn-save');
+  const undoBtn= $('#btn-undo');
+
+  let editingId = null;     // null = creating new
+  let currentPicData = '';  // dataURL for avatar
+
+  // ---------- UI: tabs ----------
+  function goTab(k){
+    [rosterBtn,editorBtn].forEach(b=>b?.classList.remove('active'));
+    if(k==='editor'){
+      roster.style.display='none';
+      editor.style.display='block';
+      editorBtn?.classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    } else {
+      editor.style.display='none';
+      roster.style.display='block';
+      rosterBtn?.classList.add('active');
+    }
+  }
+  rosterBtn?.addEventListener('click',()=>goTab('roster'));
+  editorBtn?.addEventListener('click',()=>goTab('editor'));
+
+  // ---------- Roster rendering ----------
+  function tagPills(tags){
+    return (tags||[]).filter(Boolean).map(t=>`<span class="tag">${String(t).trim().replace(/</g,'&lt;')}</span>`).join('');
+  }
+  function cardHTML(c){
+    return `
+      <article class="card ${c.favorite?'is-fav':''}" data-id="${c.id}">
+        <div class="top">
+          <img class="avatar" src="${(c.avatar||'')}" alt="">
+          <div>
+            <div class="name">${(c.name||'Unnamed').replace(/</g,'&lt;')}</div>
+            <div class="tags">${tagPills(c.tags)}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="pill primary act-chat">Use in Chat</button>
+          <button class="pill primary act-write">Use in Writer</button>
+          <button class="pill ghost act-edit">Edit</button>
+          <button class="pill ghost act-dup">Duplicate</button>
+          <button class="pill ghost act-fav">${c.favorite?'Unfavorite':'Favorite'}</button>
+          <button class="pill ghost act-del">Delete</button>
+        </div>
+      </article>`;
+  }
+  function renderRoster(){
+    const q = (search?.value||'').toLowerCase();
+    const list = loadAll();
+    if (!list.length) {
+      cardsWrap.innerHTML = `
+        <article class="card">
+          <div class="name">No characters yet</div>
+          <div class="actions"><button class="pill primary" id="cta-create">Create one</button></div>
+        </article>`;
+      $('#cta-create')?.addEventListener('click', ()=>{ beginCreate(); });
+      return;
+    }
+    cardsWrap.innerHTML = list
+      .filter(c => !q || JSON.stringify(c).toLowerCase().includes(q))
+      .map(cardHTML)
+      .join('');
+  }
+
+  // ---------- Search & filter ----------
+  search?.addEventListener('input', renderRoster);
+
+  // ---------- Top buttons ----------
+  $('#btn-spark')?.addEventListener('click',e=>{
+    document.body.classList.toggle('sparkles-off');
+    e.target.textContent=document.body.classList.contains('sparkles-off')?'Sparkles On':'Sparkles Off';
+  });
+  $('#btn-cards')?.addEventListener('click',()=>document.body.classList.remove('list-mode'));
+  $('#btn-list')?.addEventListener('click',()=>document.body.classList.add('list-mode'));
+
+  // Export: full schema
+  $('#btn-export')?.addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify({version:1, characters:loadAll()},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='characters.json'; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  // Import
+  $('#btn-import')?.addEventListener('click',()=>{
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+    inp.onchange=async()=>{
+      const f=inp.files?.[0]; if(!f) return;
+      let data; try{data=JSON.parse(await f.text())}catch{ return alert('Bad JSON'); }
+      const items = Array.isArray(data) ? data : (data.characters||[]);
+      const clean = items.map(x=>({
+        id: uid(),
+        name: x.name||'Unnamed',
+        tags: Array.isArray(x.tags)?x.tags:[],
+        avatar: x.avatar||'',
+        appearance: x.appearance||'',
+        personality: x.personality||'',
+        voice: x.voice||'',
+        bounds: x.bounds||'',
+        tones: x.tones||'',
+        rel: x.rel||'',
+        notes: x.notes||'',
+        favorite: !!x.favorite,
+      }));
+      const merged = [...loadAll(), ...clean];
+      saveAll(merged);
+      renderRoster(); goTab('roster');
+    };
+    inp.click();
+  });
+
+  // ---------- Roster actions (delegate) ----------
+  cardsWrap?.addEventListener('click', (e)=>{
+    const card = e.target.closest('.card'); if(!card) return;
+    const id   = card.getAttribute('data-id');
+    const c    = getById(id);
+    if(!c) return;
+
+    if (e.target.closest('.act-edit')) {
+      beginEdit(c);
+    } else if (e.target.closest('.act-dup')) {
+      const copy = {...c, id: uid(), name: (c.name||'Unnamed')+' (copy)', favorite:false};
+      upsert(copy); renderRoster();
+    } else if (e.target.closest('.act-fav')) {
+      c.favorite = !c.favorite; upsert(c); renderRoster();
+    } else if (e.target.closest('.act-del')) {
+      if (confirm(`Delete "${c.name}"?`)) { remove(id); renderRoster(); }
+    } else if (e.target.closest('.act-write')) {
+      localStorage.setItem(SEL_KEY, id);
+      location.href = `story-writer.html?char=${encodeURIComponent(c.name||'')}`;
+    } else if (e.target.closest('.act-chat')) {
+      localStorage.setItem(SEL_KEY, id);
+      location.href = `story-writer.html#chat?char=${encodeURIComponent(c.name||'')}`;
+    }
+  });
+
+  // ---------- Create / Edit ----------
+  $('#btn-add')?.addEventListener('click', ()=>beginCreate());
+
+  function clearEditor(){
+    editingId = null;
+    currentPicData = '';
+    prevImg.src=''; prevBox.style.display='none';
+    for (const k in fld) fld[k].value='';
+  }
+  function fillEditor(c){
+    editingId = c.id;
+    currentPicData = c.avatar||'';
+    if (currentPicData) { prevImg.src=currentPicData; prevBox.style.display='block'; }
+    fld.name.value        = c.name||'';
+    fld.tags.value        = (c.tags||[]).join(', ');
+    fld.appearance.value  = c.appearance||'';
+    fld.personality.value = c.personality||'';
+    fld.voice.value       = c.voice||'';
+    fld.bounds.value      = c.bounds||'';
+    fld.tones.value       = c.tones||'';
+    fld.rel.value         = c.rel||'';
+    fld.notes.value       = c.notes||'';
+  }
+  function beginCreate(){ clearEditor(); goTab('editor'); }
+  function beginEdit(c){ clearEditor(); fillEditor(c); goTab('editor'); }
+
+  // Upload picture -> dataURL (saved inside character)
+  upBtn?.addEventListener('click',()=>{
+    const i=document.createElement('input'); i.type='file'; i.accept='image/*';
+    i.onchange=()=>{
+      const f=i.files?.[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>{ currentPicData=r.result; prevImg.src=currentPicData; prevBox.style.display='block'; };
+      r.readAsDataURL(f);
+    };
+    i.click();
+  });
+  clrBtn?.addEventListener('click',()=>{ currentPicData=''; prevImg.src=''; prevBox.style.display='none'; });
+
+  // Save -> upsert into localStorage, then return to roster
+  saveBtn?.addEventListener('click', ()=>{
+    const obj = {
+      id: editingId || uid(),
+      name: fld.name.value.trim() || 'Unnamed',
+      tags: fld.tags.value.split(',').map(s=>s.trim()).filter(Boolean),
+      avatar: currentPicData || '',
+      appearance:  fld.appearance.value.trim(),
+      personality: fld.personality.value.trim(),
+      voice:       fld.voice.value.trim(),
+      bounds:      fld.bounds.value.trim(),
+      tones:       fld.tones.value.trim(),
+      rel:         fld.rel.value.trim(),
+      notes:       fld.notes.value.trim(),
+      favorite: editingId ? (getById(editingId)?.favorite||false) : false,
+    };
+    upsert(obj);
+    renderRoster(); goTab('roster');
+  });
+
+  // Undo = clear editor (for now)
+  undoBtn?.addEventListener('click', ()=>clearEditor());
+
+  // ---------- First render ----------
+  // If no data yet, seed with two example cards once
+  if (!loadAll().length) {
+    const seed = [
+      {id:uid(), name:'Dean Winchester', tags:['hunter','canon','protective'], avatar:'', appearance:'', personality:'', voice:'', bounds:'', tones:'', rel:'', notes:'', favorite:false},
+      {id:uid(), name:'Your OC',          tags:['oc','slow-burn','snarky'],    avatar:'', appearance:'', personality:'', voice:'', bounds:'', tones:'', rel:'', notes:'', favorite:false},
+    ];
+    saveAll(seed);
+  }
+  renderRoster();
+})();
+</script>
   chip.style.cssText='position:fixed;bottom:10px;right:10px;background:#2f6f4f;color:#eaffec;padding:6px 10px;border-radius:999px;font:12px system-ui;z-index:9999';
   document.body.appendChild(chip);
 
