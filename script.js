@@ -1,0 +1,1 @@
+console.log('Creative Hub: scripts loaded.');
