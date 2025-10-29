@@ -185,18 +185,5 @@
       </div>
     </section>
   </div>
-
-  <script>
-    // tiny tab toggle for preview
-    const tabs = document.querySelectorAll('.tab');
-    const pages = { roster: document.getElementById('tab-roster'), editor: document.getElementById('tab-editor') };
-    tabs.forEach(t => t.addEventListener('click', () => {
-      tabs.forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      const key = t.dataset.tab;
-      pages.roster.style.display = key === 'roster' ? 'block' : 'none';
-      pages.editor.style.display = key === 'editor' ? 'block' : 'none';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }));
 </body>
 </html>
